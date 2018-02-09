@@ -35,7 +35,7 @@ echo "<table class='table table-hover table-responsive table-bordered'>";
 
     echo "<tr>";
         echo "<td>Price</td>";
-        echo "<td>&#36;{$product->price}</td>";
+        echo "<td>&#36;{$product->price} </td>";
     echo "</tr>";
 
     echo "<tr>";
@@ -50,6 +50,13 @@ echo "<table class='table table-hover table-responsive table-bordered'>";
             $category->id=$product->category_id;
             $category->readName();
             echo $category->name;
+        echo "</td>";
+    echo "</tr>";
+
+    echo "<tr>";
+      echo "<td>Image</td>";
+        echo "<td>";
+            echo $product->image ? $product->getPhoto() : "No image found.";
         echo "</td>";
     echo "</tr>";
 

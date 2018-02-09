@@ -10,6 +10,7 @@ class Product {
   public $price;
   public $description;
   public $category_id;
+  public $image;
   public $timestamp;
 
   public function __construct($db){
@@ -18,7 +19,9 @@ class Product {
 
   function create(){
 
-    $query = "INSERT INTO " . $this->table_name . " SET name=:name, price=:price, description=:description, category_id=:category_id, created=:created";
+    $query = "INSERT INTO " . $this->table_name . "
+            SET name=:name, price=:price, description=:description,
+                category_id=:category_id, image=:image, created=:created";
 
     $stmt = $this->conn->prepare($query);
 
@@ -26,6 +29,8 @@ class Product {
     $this->price=htmlspecialchars(strip_tags($this->price));
     $this->description=htmlspecialchars(strip_tags($this->description));
     $this->category_id=htmlspecialchars(strip_tags($this->category_id));
+    $this->image=htmlspecialchars(strip_tags($this->image));
+
 
     $this->timestamp = date('Y-m-d H:i:s');
 
@@ -34,6 +39,7 @@ class Product {
     $stmt->bindParam(":description", $this->description);
     $stmt->bindParam(":category_id", $this->category_id);
     $stmt->bindParam(":created", $this->timestamp);
+    $stmt->bindParam(":image", $this->image);
 
     if($stmt->execute()){
       return true;
@@ -65,7 +71,7 @@ class Product {
   function readOne(){
 
     $query = "SELECT
-                name, price, description, category_id
+                name, price, description, category_id, image
               FROM "
                 . $this->table_name . "
               WHERE
@@ -83,6 +89,8 @@ class Product {
     $this->price = $row['price'];
     $this->description = $row['description'];
     $this->category_id = $row['category_id'];
+    $this->image = $row['image'];
+
   }
 
   function update(){
@@ -185,6 +193,70 @@ class Product {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     return $row['total_rows'];
+  }
+
+  function uploadPhoto(){
+
+    $result_message = "";
+
+    if($this->image){
+      $target_directory = "uploads/";
+      $target_file = $target_directory . $this->image;
+      $file_type = pathinfo($target_file, PATHINFO_EXTENSION);
+
+      $file_upload_error_messages = "";
+
+      $check = getimagesize($_FILES["image"]["tmp_name"]);
+
+      if($check!==false){
+
+      } else {
+        $file_upload_error_messages = "<div>Submitted file is not an image.</div>";
+      }
+
+      $allowed_file_types = array("jpg", "jpeg", "png", "gif");
+      if(!in_array($file_type, $allowed_file_types)){
+        $file_upload_error_messages = "<div>Only JPG, JPEG, PNG, GIF</div>";
+      }
+
+      if(file_exists($target_file)){
+        $file_upload_error_messages = "<div>Image already exists</div>";
+      }
+
+      if($_FILES['image']['size'] > (1024000)){
+        $file_upload_error_messages = "<div>Image must be less then 1MB</div>";
+      }
+
+      if(!is_dir($target_directory)){
+        mkdir($target_directory, 0777, true);
+      }
+
+      if(empty($file_upload_error_messages)){
+        if(move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)){
+            //photo uploaded
+        } else {
+          $result_message.= "<div class='alert alert-danger'>";
+            $result_message.= "<div> Unable to upload photo</div>";
+          $result_message.="</div>";
+        }
+      } else {
+        $result_message.="<div class='alert alert-danger'>";
+          $result_message.="{$file_upload_error_messages}";
+          $result_message.="<div>Update the record to upload photo.</div>";
+        $result_message.="</div>";
+      }
+    }
+
+    return $result_message;
+  }
+
+  function getPhoto(){
+    $target_directory = "uploads/";
+    if(file_exists($target_directory.$this->image)){
+      return "<img src='uploads/{$this->image}' style='width:300px;' alt='Product photo' />";
+    } else {
+      return "<span class='text-danger'>Photo is invalid!</span>";
+    }
   }
 }
 
